@@ -27,7 +27,7 @@ df['embedding'] = df['embedding'].apply(eval).apply(np.array)
 # caluculate user query embedding 
 search_term = input("Enter a search term: ")
 if search_term:
-    search_term_vector = get_embedding(search_term, engine='text-embedding-ada-002')
+    search_term_vector = get_embedding(search_term, engine='text-embedding-ada-002-ce')
 
     # find similiarity between query and vectors 
     df['similarities'] = df['embedding'].apply(lambda x:cosine_similarity(x, search_term_vector))
