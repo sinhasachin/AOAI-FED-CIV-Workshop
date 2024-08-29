@@ -58,3 +58,18 @@ if search_term:
     print('\n')
     print('Similarity Score: ', df1['similarities'].loc[df1.index[0]]) 
     print('\n')
+
+  # send search_term to Azure OpenAI as prompt and df1 as context to generate output
+    response = client.chat.completions.create(
+        model="ss-gpt-4-ce",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant. You provide answers to questions based on the information in the data. However, your answers are really succinct and to the point in as few words as possible."},
+            {"role": "user", "content": f"{search_term}\n\n{df1['text'].loc[df1.index[0]]}"}
+        ],
+        max_tokens=50
+    )
+
+    # print the generated output
+    print('\n')
+    print('Generated Output: ', response.choices[0].message.content)
+    print('\n')
