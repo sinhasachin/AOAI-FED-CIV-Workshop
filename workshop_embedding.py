@@ -17,12 +17,10 @@ Usage:
 2. Call the 'get_embedding' function to generate embeddings for the text data in the DataFrame.
 3. Save the DataFrame with the embeddings to a new CSV file named 'microsoft-earnings_embeddings.csv'.
 """
-
+import os
 from openai import AzureOpenAI
 import pandas as pd
-import os
 from dotenv import load_dotenv
-import time
 
 
 # load in variables from .env 
@@ -34,12 +32,13 @@ client = AzureOpenAI(api_version=os.environ['AZURE_OPENAI_VERSION'],
 azure_endpoint=os.environ['AZURE_OPENAI_ENDPOINT'],
 api_key=os.environ['AZURE_OPENAI_KEY'])
 
+embedding_model_deployment = os.environ['AZURE_EMBEDDINGS_DEPLOYMENT']
+
 
 # Function to get embeddings
-def get_embedding(text, engine='text-embedding-ada-002-ce'):
-    response = client.embeddings.create(model='text-embedding-ada-002-ce',
-        input=text
-    )
+#def get_embedding(text, engine='text-embedding-ada-002-ce'):
+def get_embedding(text):
+    response = client.embeddings.create(model=embedding_model_deployment, input=text)
     return response.data[0].embedding
 
 
@@ -53,6 +52,3 @@ df['embedding'] = df['text'].apply(lambda x: get_embedding(x))
 df.to_csv('microsoft-earnings_embeddings.csv')
 time.sleep(3)
 print(df)
-
-
-
