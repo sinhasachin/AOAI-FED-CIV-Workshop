@@ -13,23 +13,23 @@ The script performs the following steps:
 
 Note: This script requires the Azure OpenAI API version, endpoint, and API key to be set as environment variables.
 """
-
+import os
 import numpy as np
 from openai import AzureOpenAI
 import pandas as pd
-import os
 from dotenv import load_dotenv
-import time
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 
 # load in variables from .env 
 load_dotenv()
 
 # configure Azure OpenAI client
-client = AzureOpenAI(api_version=os.environ['AZURE_OPENAI_VERSION'],                
-    azure_endpoint=os.environ['AZURE_OPENAI_ENDPOINT'],
-    api_key=os.environ['AZURE_OPENAI_KEY'])
+client = AzureOpenAI(api_version=os.environ['AZURE_OPENAI_VERSION'],
+                    azure_endpoint=os.environ['AZURE_OPENAI_ENDPOINT'],
+                    api_key=os.environ['AZURE_OPENAI_KEY'])
+
+gpt_model_deployment = os.environ['AZURE_GPT_DEPLOYMENT']
+embedding_model_deployment = os.environ['AZURE_EMBEDDINGS_DEPLOYMENT']
 
 # read in the embeddings .csv 
 # convert elements in 'embedding' column back to numpy array
@@ -37,16 +37,14 @@ df = pd.read_csv('microsoft-earnings_embeddings.csv')
 df['embedding'] = df['embedding'].apply(eval).apply(np.array)
 
 # Function to get embeddings
-def get_embedding(text, engine='text-embedding-ada-002-ce'):
-    response = client.embeddings.create(model='text-embedding-ada-002-ce',
-        input=text
-    )
+def get_embedding(text):
+    response = client.embeddings.create(model=embedding_model_deployment, input=text)
     return response.data[0].embedding
 
 # calculate user query embedding 
 search_term = input("Enter a search term: ")
 if search_term:
-    search_term_vector = np.array(get_embedding(search_term, engine='text-embedding-ada-002'))
+    search_term_vector = np.array(get_embedding(search_term))
 
     # find similarity between query and vectors 
     df['similarities'] = df['embedding'].apply(lambda x: cosine_similarity(x.reshape(1, -1), search_term_vector.reshape(1, -1))[0][0])
@@ -59,9 +57,11 @@ if search_term:
     print('Similarity Score: ', df1['similarities'].loc[df1.index[0]]) 
     print('\n')
 
+
+
   # send search_term to Azure OpenAI as prompt and df1 as context to generate output
     response = client.chat.completions.create(
-        model="ss-gpt-4-ce",
+        model=gpt_model_deployment,
         messages=[
             {"role": "system", "content": "You are a helpful assistant. You provide answers to questions based on the information in the data. However, your answers are really succinct and to the point in as few words as possible."},
             {"role": "user", "content": f"{search_term}\n\n{df1['text'].loc[df1.index[0]]}"}
